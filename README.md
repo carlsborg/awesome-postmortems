@@ -2,7 +2,7 @@
 A collection of useful post-mortems of production issues in the wild
 
 
-1.  **Summary**: Prod database partially wiped due to human error while trying to resync the secondary hot standby. Backup process was not running because backup tool not upgraded with DB.  
+1.  **Summary**: Prod database partially wiped due to human error while trying to resync the secondary hot standby. No backups available because the daily backup process was not being run due to a versioning issue.
 **Links**: https://about.gitlab.com/2017/02/10/postmortem-of-database-outage-of-january-31/  
 **Impact** : GitLab.com service unavailable for many hours, lost 6 hours of prod user data.  
 **How it went down**: Increased load on primary due to spam removal queries caused secondary to lag. 
