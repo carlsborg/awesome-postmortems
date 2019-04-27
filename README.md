@@ -1,6 +1,18 @@
 # awesome-postmortems
 A collection of useful post-mortems of production issues in the wild
 
+
+1.  **Summary**: Prod database partially wiped due to human error while trying to resync the secondary hot standby. Backup process was not running because backup tool not upgraded with DB. 
+**Links**: https://about.gitlab.com/2017/02/10/postmortem-of-database-outage-of-january-31/
+**Impact** : GitLab.com service unavailable for many hours, lost 6 hours of prod user data.
+**How it went down**: Increased load on primary due to spam removal queries caused secondary to lag. 
+[WAL segment archiving] (https://www.postgresql.org/docs/9.3/continuous-archiving.html) was not enabled (see Concepts below), so secondary had to be manually resynced. This involves removing the data dir on the secondary, then running pg_basebackup to copy over the database from the primary to the secondary. Runbooks didn't document that pg_basebackup operations properly, engineer assumed it hung partially after creating some data, and then tries to wipe the data dir, but on the primary instead of the secondary. Backups were not available because the backup process was not running, because the DB was running 9.6, while pg_dump was 9.2 "When we went to look for the pg_dump backups we found out they were not there. The S3 bucket was empty, and there was no recent backup to be found anywhere." Sort of like the ending of Terminator 3.
+**Technologies**: Postgresql, pg_basebackup.
+**Concepts**: "... a running PostgreSQL system produces an indefinitely long sequence of Write Ahead Log records. The system physically divides this sequence into WAL segment files, which are normally 16MB apiece (although the segment size can be altered when building PostgreSQL). The segment files are given numeric names that reflect their position in the abstract WAL sequence. When not using WAL archiving, the system normally creates just a few segment files and then "recycles" them by renaming no-longer-needed segment files to higher segment numbers. It's assumed that segment files whose contents precede the checkpoint-before-last are no longer of interest and can be recycled."
+
+
+
+
 1.  **Summary**: Connectivity lost between datacenters, primary fails over but databases are inconsistent  
 **Links**: https://blog.github.com/2018-10-30-oct21-post-incident-analysis/  
 **Impact** : Degraded service for 24 hours and 11 minutes. Data was out of date and inconsistent.GitHub was also unable to serve webhook events or build and publish GitHub Pages sites.   
