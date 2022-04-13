@@ -29,3 +29,12 @@ A collection of useful post-mortems of production issues in the wild
   [Switchgear](http://www.academia.edu/1770072/Low_Voltage_Switchgear): A part of an electrical system that provides electrical isolation, switching and protection (against short circuits/overloads/overheating)  
   [Concurrent Maintainability](https://www.cibse.org/getmedia/fedd9b85-e8ea-44d0-a638-9c2a75f4ec4e/Transferable-Lessons-in-Tier-Based-Design.pdf.aspx)  "The ability for a system to be able to be maintained, fully and completely, while still being fully functional and available."  
   [Redundancy](https://www.cibse.org/getmedia/fedd9b85-e8ea-44d0-a638-9c2a75f4ec4e/Transferable-Lessons-in-Tier-Based-Design.pdf.aspx): Where the number of units, systems or subsystems, exceeds the minimum value required for capacity (N). Commonly this is defined as a function of N. (N+1, 2N, 2(N+1) etc)  
+  
+1. **Summary**: Ops error caused client data deletion on SaaS multiple products. Recovery is not automated/automatable for this failure mode.  
+**Links**: https://www.atlassian.com/engineering/april-2022-outage-update  
+**Impact** : approximately 400 Atlassian Cloud customers experienced a full outage. 8 days later they had restored service to 45% of customers, competely blowing away the [Recovery Time Objective of 6 hours for Jira](https://www.atlassian.com/trust/security/data-management)  
+**How it went down**: Ops was meant to deactivate an integration based on app ID of the legacy app, but received instead the app IDs of the entire client sites. The script was activated with the "permanently delete" operation instead of the "mark for delete" . Thus permanently deleting 400 client sites and their data. Backups restoration isnt designed for this use case. Backups hold customer site data in a single snapshot. They can restore to a recovery point for one off customers, or restore all customers into a new env. No automation in place for restoring of snapshots in bulk: restoration involves for each customer extract and restore that customers piece from the snapshot, internal verificaiton, custemer verification.  
+**Technologies**: Backups, Recovery, Snapshots, AWS/Cloud  
+**Concepts**:  
+Recovery point objective (RPO): At what point of time in the past does the back restoration take us to e.g. If snapshots are nightly, and RPO is 24 hours
+Recovery time objective (RTO): Time to complete the resoration and resume business operations
